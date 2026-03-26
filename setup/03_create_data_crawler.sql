@@ -3,7 +3,7 @@
 -- =============================================================
 -- Scans any database.schema using INFORMATION_SCHEMA, collects
 -- column metadata and sample values, loads into AI_CATALOG.
---
+-- 
 -- Usage: CALL DATA_LAYER.CORE.DATA_CRAWLER('MY_DB', 'MY_SCHEMA');
 -- =============================================================
 

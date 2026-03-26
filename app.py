@@ -6,22 +6,6 @@ session = get_active_session()
 
 st.set_page_config(page_title="AI Knowledge Portal", layout="wide")
 
-def send_email_report(subject, html_body, recipient):
-    safe_subject = subject.replace("'", "''")
-    safe_body = html_body.replace("'", "''")
-    safe_email = recipient.replace("'", "''")
-    session.sql(
-        f"CALL SYSTEM$SEND_EMAIL('KNOWLEDGE_PORTAL_EMAIL', '{safe_email}', '{safe_subject}', '{safe_body}', 'text/html')"
-    ).collect()
-
-def df_to_html_table(df):
-    header = "".join([f"<th style='padding:8px;border:1px solid #ddd;background:#f2f2f2;text-align:left'>{c}</th>" for c in df.columns])
-    rows = ""
-    for _, row in df.head(50).iterrows():
-        cells = "".join([f"<td style='padding:8px;border:1px solid #ddd'>{row[c]}</td>" for c in df.columns])
-        rows += f"<tr>{cells}</tr>"
-    return f"<table style='border-collapse:collapse;width:100%;font-family:Arial,sans-serif'><tr>{header}</tr>{rows}</table>"
-
 st.sidebar.title("AI Knowledge Portal")
 st.sidebar.markdown("---")
 
@@ -127,25 +111,6 @@ with tab2:
         st.markdown(f"**{len(kpi_df)} KPIs/metrics found**")
         st.dataframe(kpi_df, use_container_width=True)
 
-        kpi_email = st.text_input("Email address", placeholder="you@company.com", key="kpi_email")
-        if st.button("Email KPI Report", key="kpi_email_btn"):
-            if kpi_email:
-                with st.spinner("Sending..."):
-                    try:
-                        scope_label = f"{selected_db}.{selected_schema}" if scope == "Current schema only" else "All Sources"
-                        html = (
-                            f"<h2>KPI Report — {scope_label}</h2>"
-                            f"<p>{len(kpi_df)} KPIs/metrics found</p>"
-                            + df_to_html_table(kpi_df)
-                            + "<br><p style='color:gray;font-size:12px'>Sent from AI Knowledge Portal</p>"
-                        )
-                        send_email_report(f"KPI Report: {scope_label}", html, kpi_email)
-                        st.success(f"Report sent to {kpi_email}!")
-                    except Exception as e:
-                        st.error(f"Email error: {e}")
-            else:
-                st.warning("Please enter an email address.")
-
 with tab3:
     search_scope = st.radio("Search scope", ["Current schema", "All cataloged data"], horizontal=True, key="search_scope")
     search_query = st.text_input("Search", placeholder="e.g. revenue, customer name, shipping date...")
@@ -250,31 +215,5 @@ with tab4:
                 result_df = session.sql(sql_clean).to_pandas()
                 st.subheader("Results")
                 st.dataframe(result_df, use_container_width=True)
-                st.session_state["last_result"] = result_df
-                st.session_state["last_sql"] = sql_clean
-                st.session_state["last_question"] = user_question
             except Exception as e:
                 st.error(f"Query error: {e}")
-
-    if "last_result" in st.session_state and st.session_state["last_result"] is not None:
-        ai_email = st.text_input("Email address", placeholder="you@company.com", key="ai_email")
-        if st.button("Email This Report", key="ai_email_btn"):
-            if ai_email:
-                with st.spinner("Sending..."):
-                    try:
-                        q = st.session_state.get("last_question", "Query Results")
-                        sql_used = st.session_state.get("last_sql", "")
-                        html = (
-                            f"<h2>AI Knowledge Portal — Query Results</h2>"
-                            f"<p><b>Question:</b> {q}</p>"
-                            f"<p><b>Source:</b> {selected_db}.{selected_schema}</p>"
-                            f"<pre style='background:#f5f5f5;padding:10px;border-radius:4px'>{sql_used}</pre>"
-                            + df_to_html_table(st.session_state['last_result'])
-                            + "<br><p style='color:gray;font-size:12px'>Sent from AI Knowledge Portal</p>"
-                        )
-                        send_email_report(f"AI Query: {q}", html, ai_email)
-                        st.success(f"Report sent to {ai_email}!")
-                    except Exception as e:
-                        st.error(f"Email error: {e}")
-            else:
-                st.warning("Please enter an email address.")
