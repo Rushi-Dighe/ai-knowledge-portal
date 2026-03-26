@@ -40,7 +40,7 @@ if len(cataloged) > 0:
             f"{int(row['TBLS'])} tables, {int(row['KPIS'])} KPIs"
         )
 else:
-    st.sidebar.info("No schemas cataloged yet. Select a source below to get started.")
+    st.sidebar.info("No schemas cataloged yet, Select a source below to get started.")
 
 st.sidebar.markdown("---")
 
